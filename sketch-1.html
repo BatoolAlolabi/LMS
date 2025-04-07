@@ -1,0 +1,305 @@
+<!-- بناء الموقع المبدئي ب الوظائف الرئيسية المبدئية   -->
+
+<!-- كود HTML -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+
+<!-- كود head -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css.css">
+
+    <title>مكتبتي - الرئيسية</title>
+    <!-- استدعاء ل ملف CSS   -->
+
+</head>
+<!-- ............................................................... -->
+<!-- كود body -->
+
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar">
+
+        <div class="container">
+            <a href="#" class="logo">
+
+                مكتبتي
+            </a>
+            <div>
+                <a href="#" class="active">الرئيسية</a>
+                <a href="#">المكتبة</a>
+                <a href="#">حول</a>
+                <a href="#" onclick="showLogin()">تسجيل الدخول</a>
+                <div class="dropdown">
+                    <span style="color:rgb(6, 6, 6);">أهلا بك يا </span>
+                    <div class="dropdown-content">
+                        <a href="#">الصفحة الشخصية</a>
+                        <a href="#">تسجيل الخروج</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- طبقة تسجيل الدخول  -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <div>
+                    <div class="auth-form">
+                        <h2>تسجيل الدخول</h2><br>
+
+                        <form action="#" method="#">
+                            <div class="form-group">
+
+                                <input type="text" placeholder=" اسم المستخدم" name="userin" required>
+                            </div>
+                            <div class="form-group">
+
+                                <input type="password" placeholder="كلمة المرور" name="passwordin" required>
+                            </div>
+                            <button type="submit" class="btn primary-btn">دخول</button>
+                        </form>
+                        <p class="auth-link">ليس لديك حساب؟ <a href="#" onclick="showRegister()">انشاء حساب</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- طبقة التسجيل الجديد -->
+        <div id="registerModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="hideModals()">&times;</span>
+                <form id="registerForm" onsubmit="return validateForm()" method="#" action="#">
+                    <h2>إنشاء حساب</h2>
+                    <div class="form-group">
+                        <input type="text" name="full_name" placeholder=" اسم المستخدم" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="the_name" placeholder="ايميل التسجيل" required>
+                    </div>
+                    <!-- حقل كلمة المرور -->
+                    <div class="form-group">
+                        <input type="password" name="password" id="password" placeholder="كلمة المرور" required>
+                    </div>
+                    <!-- حقل التأكيد -->
+                    <div class="form-group">
+                        <input type="password" name="password_conf" placeholder="تأكيد كلمة المرور"
+                            oninput="checkPasswordMatch(this)" required>
+                    </div>
+                    <div id="passwordError" style="color: red; display: none;">
+                        كلمتا المرور غير متطابقتين!
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="pid" placeholder="رقم الهوية">
+                    </div>
+                    <div class="form-group">
+                        <textarea rows="5" cols="50" name="note" placeholder="ملاحظات"></textarea>
+                    </div>
+                    <button type="submit" class="btn primary-btn">إنشاء حساب</button>
+
+                </form>
+                <p class="auth-link">لديك حساب؟ <a <a class="switch-form" href="#" onclick="showLogin()">تسجيل
+                        الدخول</a></p>
+                <div id="registerMessage"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- طبقة تغيير كلمة السر   -->
+
+        <div id="PassModal" class="modal">
+            <div class="modal-content">
+                <div>
+                    <div class="auth-form">
+                        <h2> تغيير كلمة السر </h2><br>
+
+                        <form action="#" method="#">
+                            <div class="form-group">
+
+                                <input type="text" placeholder="كلمة المرور القديمة" name="passwordold" required>
+                            </div>
+
+                            <div class="form-group">
+
+                                <input type="password" placeholder="كلمة المرور الجديدة" name="passwordnew" required>
+                            </div>
+
+                            <div class="form-group">
+
+                                <input type="password" placeholder="إعادة كلمة المرور" name="passwordreset" required>
+
+                            </div>
+                            <button type="submit" class="btn primary-btn">تأكيد العملية</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- طبقة عرض الكتب  -->
+        <div id="BookModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="hideModals()">&times;</span>
+                <form id="registerForm" onsubmit="return validateForm()" method="#" action="#"
+                    enctype="multipart/form-data">
+                    <h2>إضافة كتاب</h2>
+                    <div class="form-group">
+                        <input type="text" name="book_name" placeholder=" عنوان الكتاب" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="auther_name" placeholder=" المؤلف" required>
+                    </div>
+                    <!-- حقل كلمة المرور -->
+                    <div class="form-group">
+                        <input type="text" name="publicher" placeholder="دار النشر" required>
+                    </div>
+                    <!-- حقل التأكيد -->
+                    <div class="form-group">
+                        <input type="text" name="reference_num" placeholder="الرقم المرجعي" required>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="int" name="count_book" placeholder=" عدد النسخ">
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="cover-photo" class="custom-file-upload">
+                            <span> || اختر صورة الغلاف ||</span>
+                            <input type="file" id="cover-photo" name="cover_photo" accept="image/*"
+                                style="display: none;" onchange="updateFileName(this)">
+                        </label>
+                        <span id="file-name" class="file-name">لم يتم اختيار ملف</span>
+                    </div>
+                    <button type="submit" class="btn primary-btn">إضافة كتاب </button>
+
+                </form>
+                <div id="registerMessage"></div>
+                </form>
+            </div>
+        </div>
+
+        <div class="container_user">
+            <!-- الجزء الجانبي (الأزرار) -->
+            <nav class="sidebar">
+                <button class="sidebar-button active" data-page="page2">
+                    <i class="fas fa-user"></i>
+                    الملف الشخصي
+                </button>
+                <button class="sidebar-button " data-page="page1">
+                    <i class="fas fa-home"></i>
+                    إدارة المكتبة
+                </button>
+                <button class="sidebar-button " data-page="page1">
+                    <i class="fas fa-home"></i>
+                    إدارة العمليات
+                </button>
+                <button class="sidebar-button " data-page="page1">
+                    <i class="fas fa-home"></i>
+                    إدارة المستخدمين
+                </button>
+                <button class="sidebar-button" data-page="page3">
+                    <i class="fas fa-envelope"></i>
+                    إدارة المبيعات
+                </button>
+                <button class="sidebar-button" data-page="page4">
+                    <i class="fas fa-cog"></i>
+                    إغلاق المنصة
+                </button>
+            </nav>
+
+            <!-- منطقة المحتوى -->
+            <main class="content-area">
+                <!-- الصفحة الأولى -->
+                <div class="content-page active" id="page2">
+                    <h1 class="page-title">الملف الشخصي</h1>
+                    <div class="profile-info">
+                        <img src="#" alt="صورة الملف">
+                        <h2> بتول</h2>
+                        <p>مطور ويب</p>
+                    </div>
+                </div>
+
+                <!-- الصفحة الثانية -->
+                <div class="content-page " id="page1">
+                    <h1 class="page-title"> إدارة المكتبة </h1>
+
+                    <!-- يمكنك إضافة محتوى هنا -->
+                </div>
+
+
+                <!-- الصفحة الثالثة -->
+                <div class="content-page" id="page3">
+                    <h1 class="page-title"> إدارة العمليات </h1>
+                    <!-- يمكنك إضافة محتوى هنا -->
+                </div>
+                <!-- الصفحة الرابعة -->
+                <div class="content-page active" id="page2">
+                    <h1 class="page-title"> إدارة المبيات </h1>
+                    <!-- يمكنك إضافة محتوى هنا -->
+                </div>
+                <!-- الصفحة الخامسة -->
+                <div class="content-page active" id="page2">
+                    <h1 class="page-title"> إدارة المستخدمسن </h1>
+                    <!-- يمكنك إضافة محتوى هنا -->
+                </div>
+
+
+                <!-- الصفحة السادسة -->
+                <div class="content-page" id="page4">
+                    <h1 class="page-title">إغلاق المنصة</h1>
+                    <!-- الصفحة الرابعة -->
+                    <div class="content-page active" id="page2">
+                        <h1 class="page-title"> إدارة المبيات </h1>
+                        <!-- يمكنك إضافة محتوى هنا -->
+                    </div>
+
+                </div>
+
+
+            </main>
+        </div>
+    </nav>
+</body>
+<!-- ............................................................... -->
+<!-- الفوتر -->
+<footer>
+    <div>
+        <div>
+            <h4>عن مكتبتي</h4>
+            <p>منصة رائدة في مجال النشر الرقمي تهدف إلى إثراء المحتوى العربي</p>
+        </div>
+        <div>
+            <h4>الأقسام</h4>
+            <ul>
+                <li><a href="#">المكتبة الرقمية</a></li>
+                <li><a href="#">المؤلفون</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>الدعم</h4>
+            <ul>
+                <li><a href="#">الأسئلة الشائعة</a></li>
+                <li><a href="#">الدعم الفني</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>تابعنا</h4>
+            <div>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="copyright">
+        © 2025 مكتبتي. جميع الحقوق محفوظة
+    </div>
+    <script src="#"></script>
+</footer>
+<!-- ............................................................... -->
+
+</html>
