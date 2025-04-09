@@ -1,33 +1,35 @@
-
 <!-- طبقة تسجيل الدخول العائمة -->
-<div id="loginModal" class="modal">
+<div
+    style="background:rgb(19, 180, 212);
+           position:absolute; 
+            border: 5px solid;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px;">
+
     <div class="modal-content">
-        <div >
+        <div>
             <div class="auth-form">
                 <h2>تسجيل الدخول</h2><br>
-                
-                <form >
+
+                <form>
                     <div class="form-group">
-                        
-                        <input type="text" placeholder=" اسم المستخدم" name="userin" required>
+
+                        <input type="text" placeholder=" اسم المستخدم"
+                            name="userin" required>
                     </div>
                     <div class="form-group">
-                       
-                        <input type="password" placeholder="كلمة المرور" name="passwordin" required>
+
+                        <input type="password" placeholder="كلمة المرور"
+                            name="passwordin" required>
                     </div>
-                    <button type="submit" class="btn primary-btn" >دخول</button>
+                    <button type="submit" class="btn primary-btn">دخول</button>
                 </form>
-                <p class="auth-link">ليس لديك حساب؟ <a href="#" onclick="showRegister()">انشاء حساب</a></p>
+                <p class="auth-link">ليس لديك حساب؟ <a href="#"
+                        onclick="showRegister()">انشاء حساب</a></p>
             </div>
         </div>
     </div>
 
-
 </div>
-
-
-
-
-
-
-
