@@ -1,7 +1,6 @@
 <!-- تسجيل جديد -->
 
-<div 
-     style="background:rgb(19, 180, 212);
+<div style="background:rgb(19, 180, 212);
            position:absolute; 
             border: 5px solid;
             top: 50%;

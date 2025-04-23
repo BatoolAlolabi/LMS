@@ -7,7 +7,7 @@ $_SESSION = array();
 
 // حذف كوكي الجلسة
 if (isset($_COOKIE[session_name()])) {
-    setcookie(session_name(), '', time()-86400, '/');
+    setcookie(session_name(), '', time() - 86400, '/');
 }
 
 // تدمير الجلسة
@@ -19,4 +19,3 @@ header("Expires: 0");
 header("Location: login.php");
 ob_end_flush();
 exit();
-?>

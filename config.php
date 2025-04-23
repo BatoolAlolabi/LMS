@@ -8,5 +8,3 @@ $dbname = "bookDB";
 $conn = new mysqli($host, $user, $password, $dbname);
 
 $conn->set_charset('utf8');
-
-?>

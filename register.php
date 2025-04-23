@@ -18,7 +18,7 @@ $categories = $stmt->get_result();
             icon: 'warning',
             title: 'انتبه.. !',
             text: '<?= $_SESSION['error'] ?>'
-            
+
         });
     </script>
     <?php unset($_SESSION['error']); ?>
@@ -35,22 +35,19 @@ $categories = $stmt->get_result();
                         <!-- الخطوة 1: البيانات الأساسية -->
                         <div id="step1">
                             <div class="mb-3">
-                                <input type="text" class="form-control" 
-                                       name="name" placeholder="الاسم الكامل" required>
+                                <input type="text" class="form-control" name="name" placeholder="الاسم الكامل" required>
                             </div>
                             <div class="mb-3">
-                                <input type="email" class="form-control" 
-                                       name="email" placeholder="البريد الإلكتروني" required>
+                                <input type="email" class="form-control" name="email" placeholder="البريد الإلكتروني"
+                                    required>
                             </div>
                             <div class="mb-3">
-                                <input type="password" class="form-control" 
-                                       name="password" id="password" 
-                                       placeholder="كلمة المرور" required>
+                                <input type="password" class="form-control" name="password" id="password"
+                                    placeholder="كلمة المرور" required>
                             </div>
                             <div class="mb-3">
-                                <input type="password" class="form-control" 
-                                       id="confirm_password" 
-                                       placeholder="تأكيد كلمة المرور" required>
+                                <input type="password" class="form-control" id="confirm_password"
+                                    placeholder="تأكيد كلمة المرور" required>
                             </div>
                             <button type="button" class="btn btn-primary" onclick="nextStep()">التالي</button>
                         </div>
@@ -59,21 +56,16 @@ $categories = $stmt->get_result();
                         <div id="step2" style="display:none;">
                             <h5>اختر التصنيفات المفضلة:</h5>
                             <div class="row">
-                                <?php while($cat = $categories->fetch_assoc()): ?>
-                                <div class="col-md-4 mb-3">
-                                    <div class="form-check">
-                                        <input 
-                                            type="checkbox" 
-                                            name="categories[]" 
-                                            value="<?= $cat['category_id'] ?>"
-                                            id="cat_<?= $cat['category_id'] ?>"
-                                            class="form-check-input"
-                                        >
-                                        <label class="form-check-label" for="cat_<?= $cat['category_id'] ?>">
-                                            <?= htmlspecialchars($cat['category_name']) ?>
-                                        </label>
+                                <?php while ($cat = $categories->fetch_assoc()): ?>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="categories[]" value="<?= $cat['category_id'] ?>"
+                                                id="cat_<?= $cat['category_id'] ?>" class="form-check-input">
+                                            <label class="form-check-label" for="cat_<?= $cat['category_id'] ?>">
+                                                <?= htmlspecialchars($cat['category_name']) ?>
+                                            </label>
+                                        </div>
                                     </div>
-                                </div>
                                 <?php endwhile; ?>
                             </div>
                             <div class="mt-3">
@@ -93,31 +85,31 @@ $categories = $stmt->get_result();
 
 
 <script>
-function nextStep() {
-    const pass = document.getElementById('password').value;
-    const confirmPass = document.getElementById('confirm_password').value;
-    
-    if (pass !== confirmPass) {
-        alert('كلمة المرور غير متطابقة!');
-        return;
-    }
-    
-    document.getElementById('step1').style.display = 'none';
-    document.getElementById('step2').style.display = 'block';
-}
+    function nextStep() {
+        const pass = document.getElementById('password').value;
+        const confirmPass = document.getElementById('confirm_password').value;
 
-function prevStep() {
-    document.getElementById('step2').style.display = 'none';
-    document.getElementById('step1').style.display = 'block';
-}
+        if (pass !== confirmPass) {
+            alert('كلمة المرور غير متطابقة!');
+            return;
+        }
 
-document.getElementById('regForm').addEventListener('submit', function(e) {
-    const checkboxes = document.querySelectorAll('input[name="categories[]"]:checked');
-    if (checkboxes.length === 0) {
-        e.preventDefault();
-        alert('الرجاء اختيار تصنيف واحد على الأقل!');
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('step2').style.display = 'block';
     }
-});
+
+    function prevStep() {
+        document.getElementById('step2').style.display = 'none';
+        document.getElementById('step1').style.display = 'block';
+    }
+
+    document.getElementById('regForm').addEventListener('submit', function(e) {
+        const checkboxes = document.querySelectorAll('input[name="categories[]"]:checked');
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert('الرجاء اختيار تصنيف واحد على الأقل!');
+        }
+    });
 </script>
 
 <?php include 'includes/footer.php'; ?>

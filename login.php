@@ -1,9 +1,10 @@
-<?php 
+<?php
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();}
+    session_start();
+}
 
-require __DIR__ . '/includes/config.php'; 
-require __DIR__ . '/includes/header.php'; 
+require __DIR__ . '/includes/config.php';
+require __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container mt-5">
@@ -64,18 +65,18 @@ require __DIR__ . '/includes/header.php';
 </div>
 
 <script>
-function togglePassword() {
-    const passwordField = document.getElementById('password');
-    const eyeIcon = document.getElementById('eyeIcon');
+    function togglePassword() {
+        const passwordField = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
 
-    if (passwordField.type === 'password') {
-        passwordField.type = 'text';
-        eyeIcon.classList.replace('bi-eye', 'bi-eye-slash');
-    } else {
-        passwordField.type = 'password';
-        eyeIcon.classList.replace('bi-eye-slash', 'bi-eye');
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            eyeIcon.classList.replace('bi-eye', 'bi-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            eyeIcon.classList.replace('bi-eye-slash', 'bi-eye');
+        }
     }
-}
 </script>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

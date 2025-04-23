@@ -1,12 +1,12 @@
-<?php 
+<?php
 
 include "../config.php";
 
-$name= $_GET["name"];
-$password= $_GET["password"];
-$email= $_GET["email"];
+$name = $_GET["name"];
+$password = $_GET["password"];
+$email = $_GET["email"];
 
-$sql ="INSERT INTO  users (name,password,email)
+$sql = "INSERT INTO  users (name,password,email)
               VALUES ('$name','$password','$email')";
 
 $result2 = $conn->query($sql);
@@ -17,4 +17,3 @@ if ($result2 === true) {
     echo "فشل الإدخال: " . $conn->error;
 }
 header('location:http://localhost/test/battoul/sketch.php');
-?>

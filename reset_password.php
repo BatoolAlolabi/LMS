@@ -15,13 +15,15 @@ $token = $_GET['token'] ?? '';
                 <div class="card-body">
                     <form action="<?= BASE_URL ?>process.php" method="POST">
                         <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
-                        
+
                         <div class="mb-3">
-                            <input type="password" class="form-control" placeholder="كلمة المرور الجديدة" name="new_password" required>
+                            <input type="password" class="form-control" placeholder="كلمة المرور الجديدة"
+                                name="new_password" required>
                         </div>
 
                         <div class="mb-3">
-                            <input type="password" class="form-control" placeholder="تأكيد كلمة المرور" name="confirm_password" required>
+                            <input type="password" class="form-control" placeholder="تأكيد كلمة المرور"
+                                name="confirm_password" required>
                         </div>
 
                         <button type="submit" name="reset_password" class="btn btn-primary">تعيين</button>
