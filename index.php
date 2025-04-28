@@ -1,449 +1,256 @@
-<?php
-session_start();
+<?php 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
 require __DIR__ . '/includes/config.php';
 require __DIR__ . '/includes/header.php';
-
-// استعلام لجلب الكتب الكلي
-$physical_books = $conn->query("
-    SELECT 
-        books.*, 
-        categories.category_name 
-    FROM books
-    INNER JOIN categories 
-        ON books.category_id = categories.category_id 
-");
-
-// جلب الكتب المقترحة
-$recommended_books = [];
-if (isset($_SESSION['user_id'])) {
-    $stmt = $conn->prepare("
-        SELECT 
-            b.*, 
-            categories.category_name 
-        FROM books b
-        JOIN user_categories uc 
-            ON b.category_id = uc.category_id
-        INNER JOIN categories 
-            ON b.category_id = categories.category_id
-        WHERE uc.user_id = ?
-    ");
-    $stmt->bind_param("i", $_SESSION['user_id']);
-    $stmt->execute();
-    $recommended_books = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+?>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-// جلب الكتب الأعلى تقييمًا
-$rated_books = $conn->query("
-    SELECT 
-        b.*, 
-        categories.category_name 
-    FROM books b
-    INNER JOIN categories 
-        ON b.category_id = categories.category_id
-    WHERE b.evaluation > 4
-")->fetch_all(MYSQLI_ASSOC);
+/* الشريط الأخباري */
+.news-ticker {
+    background: #f8f9fa;
+    padding: 10px 0;
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 30px;
+}
 
-?>
+marquee {
+    font-size: 1.2em;
+    color: #333;
+    padding: 0 15px;
+}
 
-<style>
-    .flip-card {
-        perspective: 1000px;
-        min-height: 200px;
-        margin-bottom: 1.5rem;
-    }
+/* الحاوية الرئيسية */
+.main-container {
+    max-width: 1200px;
+    margin: 0 auto 30px;
+    padding: 0 15px;
+    display: flex;
+    gap: 20px;
+}
 
-    .flip-inner {
-        position: relative;
-        width: 60%;
-        height: 100%;
-        transition: transform 0.6s;
-        transform-style: preserve-3d;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-    }
+/* قسم السلايدر */
+.slideshow-container {
+    flex: 0 0 70%;
+    height: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
 
-    .flip-card:hover .flip-inner {
-        transform: rotateY(180deg);
-    }
+.mySlides {
+    display: none;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
 
-    .flip-front,
-    .flip-back {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        backface-visibility: hidden;
-        border-radius: 1px;
-        overflow: hidden;
-    }
+.mySlides.active {
+    display: block;
+    opacity: 1;
+}
 
-    .flip-back {
-        background: #000;
-        color: #fff;
-        padding: 15px;
-        transform: rotateY(180deg);
-        display: flex;
+.mySlides img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* البطاقات الجانبية */
+.side-cards {
+    flex: 0 0 28%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.side-card {
+    height: 190px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.side-card:hover {
+    transform: translateY(-5px);
+}
+
+.side-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* بطاقات المحتوى */
+.cards-container {
+    max-width: 1200px;
+    margin: 0 auto 50px;
+    padding: 0 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.card-content {
+    padding: 15px;
+}
+
+.card-content h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+/* تجاوبية */
+@media (max-width: 992px) {
+    .main-container {
         flex-direction: column;
     }
 
-    .card-actions {
-        margin-top: auto;
-        display: flex;
-        gap: 10px;
-        justify-content: center;
+    .slideshow-container,
+    .side-cards {
+        flex: 0 0 100%;
     }
 
-    /* تنسيقات النافذة المنبثقة */
-    #bookDetailsModal .modal-content {
-        background: #1a1a1a;
-        color: #fff;
+    .side-card {
+        height: 250px;
     }
+}
 
-    #bookDetailsModal img {
-        max-height: 300px;
-        object-fit: cover;
+@media (max-width: 576px) {
+    .cards-container {
+        grid-template-columns: 1fr;
     }
+}
 </style>
-<?php if (isset($_SESSION['error'])): ?>
-    <script>
-        Swal.fire({
-            icon: 'warning',
-            title: 'انتبه.. !',
-            text: '<?= $_SESSION['error'] ?>'
 
-        });
-    </script>
-    <?php unset($_SESSION['error']); ?>
-<?php endif; ?>
-
-<div>
-    <!-- شريط البحث -->
-    <div class="home-search mb-4 text-center">
-        <form id="searchForm" onsubmit="return false;">
-            <input type="text" id="searchInput" class="form-control rounded-pill w-100 mx-auto"
-                placeholder="ابحث عن كتاب..." autocomplete="off">
-        </form>
-    </div>
-
-    <!-- تصفية التصنيفات -->
-    <div class="filter-bar d-flex justify-content-center gap-2 mb-4 flex-wrap" id="categoryFilter">
-        <button class="filter-btn btn btn-outline-primary rounded-pill active" data-category="all">الكل</button>
+<!-- الشريط الأخباري -->
+<div class="news-ticker">
+    <marquee behavior="scroll" direction="right">
         <?php
-        $categories = $conn->query("SELECT * FROM categories");
-        while ($cat = $categories->fetch_assoc()):
+        $news = $conn->query("SELECT * FROM news_ticker WHERE is_active = 1");
+        while ($item = $news->fetch_assoc()):
+            echo htmlspecialchars($item['content']) . " | ";
+        endwhile;
         ?>
-            <button class="filter-btn btn btn-outline-primary rounded-pill"
-                data-category="<?= $cat['category_id'] ?>"><?= $cat['category_name'] ?></button>
-        <?php endwhile; ?>
-    </div>
+    </marquee>
+</div>
 
-    <div class="accordion">
-        <?php if (!empty($rated_books)): ?>
-            <button class="accordion-header"> الأعلى تقييماُ</button>
-            <div class="accordion-content">
-                <div class="row g-4">
-                    <?php foreach ($rated_books as $book): ?>
-                        <div class="col-6 col-md-4 col-lg-2">
-                            <div class="flip-card h-100">
-                                <div class="flip-inner">
-                                    <!-- الوجه الأمامي -->
-                                    <div class="flip-front">
-                                        <img src="<?= BASE_URL ?><?= htmlspecialchars($book['cover_image']) ?>"
-                                            alt="غلاف الكتاب">
-                                    </div>
-
-                                    <!-- الوجه الخلفي -->
-                                    <div class="flip-back">
-                                        <h6 class="fw-bold"><?= htmlspecialchars($book['title']) ?></h6>
-                                        <p class="small"><?= htmlspecialchars($book['author']) ?></p>
-
-                                        <div class="rating-stars mb-3">
-                                            <?= str_repeat('★', $book['evaluation']) . str_repeat('☆', 5 - $book['evaluation']) ?>
-                                        </div>
-
-                                        <div class="card-actions">
-                                            <!-- أيقونة التفاصيل -->
-                                            <button class="btn btn-info btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#bookDetails" onclick="loadBookDetails(
-                                            '<?= addslashes($book['title']) ?>',
-                                            '<?= addslashes($book['author']) ?>',
-                                            '<?= addslashes($book['category_name']) ?>',
-                                            <?= $book['evaluation'] ?>,
-                                            <?= $book['price'] ?>,
-                                            '<?= addslashes($book['description']) ?>',
-                                            '<?= htmlspecialchars($book['cover_image']) ?>'
-                                        )">
-                                                <i class="fas fa-info"></i>
-                                            </button>
-                                            <!-- الأزرار كأيقونات -->
-                                            <?php if (isset($_SESSION['user_id'])): ?>
-                                                <div class="card-actions">
-                                                    <form method="POST" action="process.php">
-                                                        <input type="hidden" name="csrf_token"
-                                                            value="<?= $_SESSION['csrf_token'] ?>">
-                                                        <button type="submit" name="action" value="borrow"
-                                                            class="btn btn-primary btn-sm rounded-circle" title="استعارة الكتاب">
-                                                            <i class="fas fa-book"></i>
-                                                        </button>
-                                                        <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
-                                                    </form>
-
-                                                    <form method="POST" action="process.php">
-                                                        <input type="hidden" name="csrf_token"
-                                                            value="<?= $_SESSION['csrf_token'] ?>">
-                                                        <button type="submit" name="action" value="purchase"
-                                                            class="btn btn-success btn-sm rounded-circle" title="شراء الكتاب">
-                                                            <i class="fas fa-shopping-cart"></i>
-                                                        </button>
-                                                        <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
-                                                    </form>
-                                                </div>
-                                            <?php else: ?>
-                                                <button class="btn btn-secondary btn-sm rounded-circle" data-bs-toggle="modal"
-                                                    data-bs-target="#loginModal" title="تسجيل الدخول">
-                                                    <i class="fas fa-sign-in-alt"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            </div>
-
-    </div>
-
-    <div class="accordion">
-        <?php if (!empty($recommended_books)): ?>
-            <button class="accordion-header"> المفضلة</button>
-            <div class="accordion-content">
-                <div class="row g-4">
-                    <?php foreach ($recommended_books as $book): ?>
-                        <div class="col-6 col-md-4 col-lg-2">
-                            <div class="flip-card h-100">
-                                <div class="flip-inner">
-                                    <!-- الوجه الأمامي -->
-                                    <div class="flip-front">
-                                        <img src="<?= BASE_URL ?><?= htmlspecialchars($book['cover_image']) ?>"
-                                            alt="غلاف الكتاب">
-                                    </div>
-
-                                    <!-- الوجه الخلفي -->
-                                    <div class="flip-back">
-                                        <h6 class="fw-bold"><?= htmlspecialchars($book['title']) ?></h6>
-                                        <p class="small"><?= htmlspecialchars($book['author']) ?></p>
-
-                                        <div class="rating-stars mb-3">
-                                            <?= str_repeat('★', $book['evaluation']) . str_repeat('☆', 5 - $book['evaluation']) ?>
-                                        </div>
-
-                                        <div class="card-actions">
-                                            <!-- أيقونة التفاصيل -->
-                                            <button class="btn btn-info btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#bookDetails" onclick="loadBookDetails(
-                                            '<?= addslashes($book['title']) ?>',
-                                            '<?= addslashes($book['author']) ?>',
-                                            '<?= addslashes($book['category_name']) ?>',
-                                            <?= $book['evaluation'] ?>,
-                                            <?= $book['price'] ?>,
-                                            '<?= addslashes($book['description']) ?>',
-                                            '<?= htmlspecialchars($book['cover_image']) ?>'
-                                        )">
-                                                <i class="fas fa-info"></i>
-                                            </button>
-                                            <!-- الأزرار كأيقونات -->
-                                            <?php if (isset($_SESSION['user_id'])): ?>
-                                                <div class="card-actions">
-                                                    <form method="POST" action="process.php">
-                                                        <input type="hidden" name="csrf_token"
-                                                            value="<?= $_SESSION['csrf_token'] ?>">
-                                                        <button type="submit" name="action" value="borrow"
-                                                            class="btn btn-primary btn-sm rounded-circle" title="استعارة الكتاب">
-                                                            <i class="fas fa-book"></i>
-                                                        </button>
-                                                        <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
-                                                    </form>
-
-                                                    <form method="POST" action="process.php">
-                                                        <input type="hidden" name="csrf_token"
-                                                            value="<?= $_SESSION['csrf_token'] ?>">
-                                                        <button type="submit" name="action" value="purchase"
-                                                            class="btn btn-success btn-sm rounded-circle" title="شراء الكتاب">
-                                                            <i class="fas fa-shopping-cart"></i>
-                                                        </button>
-                                                        <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
-                                                    </form>
-                                                </div>
-                                            <?php else: ?>
-                                                <button class="btn btn-secondary btn-sm rounded-circle" data-bs-toggle="modal"
-                                                    data-bs-target="#loginModal" title="تسجيل الدخول">
-                                                    <i class="fas fa-sign-in-alt"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            </div>
-
-    </div>
-
-    <div class="accordion">
-        <button class="accordion-header"> المكتبة الشاملة</button>
-        <div class="accordion-content">
-            <div class="row g-4">
-                <?php while ($book = $physical_books->fetch_assoc()): ?>
-                    <div class="col-6 col-md-4 col-lg-2">
-                        <div class="flip-card h-100">
-                            <div class="flip-inner">
-                                <!-- الوجه الأمامي -->
-                                <div class="flip-front">
-                                    <img src="<?= BASE_URL ?><?= htmlspecialchars($book['cover_image']) ?>"
-                                        alt="غلاف الكتاب">
-                                </div>
-
-                                <!-- الوجه الخلفي -->
-                                <div class="flip-back">
-                                    <h6 class="fw-bold"><?= htmlspecialchars($book['title']) ?></h6>
-                                    <p class="small"><?= htmlspecialchars($book['author']) ?></p>
-
-                                    <div class="rating-stars mb-3">
-                                        <?= str_repeat('★', $book['evaluation']) . str_repeat('☆', 5 - $book['evaluation']) ?>
-                                    </div>
-
-                                    <div class="card-actions">
-                                        <!-- أيقونة التفاصيل -->
-                                        <button class="btn btn-info btn-sm" data-bs-toggle="modal"
-                                            data-bs-target="#bookDetails" onclick="loadBookDetails(
-                                                '<?= addslashes($book['title']) ?>',
-                                                '<?= addslashes($book['author']) ?>',
-                                                '<?= addslashes($book['category_name']) ?>',
-                                                <?= $book['evaluation'] ?>,
-                                                <?= $book['price'] ?>,
-                                                '<?= htmlspecialchars($book['description']) ?>',
-                                                '<?= htmlspecialchars($book['cover_image']) ?>'
-                                            )">
-                                            <i class="fas fa-info"></i>
-                                        </button>
-                                        <!-- الأزرار كأيقونات -->
-                                        <?php if (isset($_SESSION['user_id'])): ?>
-                                            <div class="card-actions">
-                                                <form method="POST" action="process.php">
-                                                    <input type="hidden" name="csrf_token"
-                                                        value="<?= $_SESSION['csrf_token'] ?>">
-                                                    <button type="submit" name="action" value="borrow"
-                                                        class="btn btn-primary btn-sm rounded-circle" title="استعارة الكتاب">
-                                                        <i class="fas fa-book"></i>
-                                                    </button>
-                                                    <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
-                                                </form>
-
-                                                <form method="POST" action="process.php">
-                                                    <input type="hidden" name="csrf_token"
-                                                        value="<?= $_SESSION['csrf_token'] ?>">
-                                                    <button type="submit" name="action" value="purchase"
-                                                        class="btn btn-success btn-sm rounded-circle" title="شراء الكتاب">
-                                                        <i class="fas fa-shopping-cart"></i>
-                                                    </button>
-                                                    <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
-                                                </form>
-                                            </div>
-                                        <?php else: ?>
-                                            <button class="btn btn-secondary btn-sm rounded-circle" data-bs-toggle="modal"
-                                                data-bs-target="#loginModal" title="تسجيل الدخول">
-                                                <i class="fas fa-sign-in-alt"></i>
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php endwhile; ?>
-            </div>
+<!-- السلايدر + البطاقات الجانبية -->
+<div class="main-container">
+    <div class="slideshow-container">
+        <?php
+        $slides = $conn->query("SELECT * FROM slider_images WHERE is_active = 1");
+        $first = true;
+        while ($slide = $slides->fetch_assoc()):
+        ?>
+        <div class="mySlides <?= $first ? 'active' : '' ?>">
+            <img src="<?= BASE_URL . $slide['image_path'] ?>" alt="Slider Image">
         </div>
-    </div>
-    <!-- نافذة التفاصيل -->
-    <div class="modal fade" id="bookDetails">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">تفاصيل الكتاب</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <img id="modalCover" src="" class="img-fluid">
-                        </div>
-                        <div class="col-md-8">
-                            <h4 id="modalTitle"></h4>
-                            <p><strong>المؤلف:</strong> <span id="modalAuthor"></span></p>
-                            <p><strong>التصنيف:</strong> <span id="modalCategory"></span></p>
-                            <p><strong>التقييم:</strong> <span id="modalRating"></span></p>
-                            <p><strong>السعر:</strong> <span id="modalPrice"></span> ل.س</p>
-                            <p id="modalDesc"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php $first = false; endwhile; ?>
     </div>
 
-    <!-- مودال تسجيل الدخول -->
-    <div class="modal fade" id="loginModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">تسجيل الدخول مطلوب</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>يجب تسجيل الدخول لإكمال هذه العملية</p>
-                    <a href="login.php" class="btn btn-primary">تسجيل الدخول</a>
-                    <a href="register.php" class="btn btn-secondary">إنشاء حساب</a>
-                </div>
-            </div>
-        </div>
+    <div class="side-cards">
+        <a href="home.php?year=2024" class="side-card">
+            <img src="<?= BASE_URL ?>assets/lib/2024.png" alt="Side Card 1">
+        </a>
+        <a href="home.php?year=2025" class="side-card">
+            <img src="<?= BASE_URL ?>assets/lib/2025.png" alt="Side Card 2">
+        </a>
     </div>
 </div>
 
-<script>
-    function loadBookDetails(title, author, category, rating, price, desc, cover) {
-        document.getElementById('modalTitle').textContent = title;
-        document.getElementById('modalAuthor').textContent = author;
-        document.getElementById('modalCategory').textContent = category;
-        document.getElementById('modalPrice').textContent = price;
-        document.getElementById('modalDesc').textContent = desc;
-        document.getElementById('modalCover').src = "<?= BASE_URL ?>" + cover;
-
-        // توليد النجوم
-        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-        document.getElementById('modalRating').innerHTML = stars;
-    }
-
-
-    // دالة مساعدة لإنشاء بطاقات الكتب
-    function generateBookCard(book) {
-        return `
-    <div class="flip-card h-100">
-        <div class="flip-inner">
-            <div class="flip-front">
-                <img src="<?= BASE_URL ?>${book.cover_image}" alt="غلاف الكتاب">
-            </div>
-            <div class="flip-back">
-                <!-- باقي محتوى البطاقة -->
+<!-- البطاقات الثلاث -->
+<div class="cards-container">
+    <!-- بطاقة الكتب -->
+    <a href="home.php?material_type=كتاب" class="card-link">
+        <div class="card">
+            <img src="<?= BASE_URL ?>assets/lib/library.png" alt="كتب">
+            <div class="card-content">
+                <h3>المكتبة الرقمية</h3>
+                <p>تصفح آلاف الكتب الإلكترونية</p>
             </div>
         </div>
-    </div>`;
+    </a>
+
+    <!-- بطاقة المجلات -->
+    <a href="home.php?material_type=مجلة" class="card-link">
+        <div class="card">
+            <img src="<?= BASE_URL ?>assets/lib/magaziens.png" alt="مجلات">
+            <div class="card-content">
+                <h3>المجلات الدورية</h3>
+                <p>آخر الإصدارات من المجلات</p>
+            </div>
+        </div>
+    </a>
+
+    <!-- بطاقة الصحف -->
+    <a href="home.php?material_type=جريدة" class="card-link">
+        <div class="card">
+            <img src="<?= BASE_URL ?>assets/lib/wallpapers.png" alt="جريدة">
+            <div class="card-content">
+                <h3>الصحف اليومية</h3>
+                <p>أحدث نسخ الصحف اليومية</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<script>
+// سكريبت السلايدر المعدل
+let slideIndex = 0;
+const slides = document.getElementsByClassName("mySlides");
+
+function showSlides() {
+    // إخفاء جميع الشرائح
+    Array.from(slides).forEach(slide => {
+        slide.classList.remove('active');
+    });
+
+    slideIndex++;
+
+    if (slideIndex > slides.length) {
+        slideIndex = 1;
     }
+
+    // إظهار الشريحة الحالية
+    slides[slideIndex - 1].classList.add('active');
+
+    setTimeout(showSlides, 5000);
+}
+
+// بدء التشغيل التلقائي
+showSlides();
 </script>
 
-
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '/includes/footer.php';?>
