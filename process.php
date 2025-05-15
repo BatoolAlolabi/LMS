@@ -1,20 +1,16 @@
 <?php
-
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();}
+    session_start();
+}
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);  
-
 require __DIR__ . '/includes/config.php';
 require __DIR__ . '/includes/db_logger.php';
-
-
 //if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // التحقق من وجود CSRF Token في الطلب والجلسة
- //   if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-  //      die("Invalid CSRF Token");
-  //  }
+ // if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+   //    die("Invalid CSRF Token");
+// }
 //}
 // إيقاف عرض الأخطاء للمستخدمين
 
@@ -484,10 +480,55 @@ if (isset($_POST['action'])) {
         if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
             throw new Exception('طلب غير مصرح به');
         }
+        $book_id = (int)$_POST['book_id'];
+
+        // ━━━━━━━━━━ جلب سعر الكتاب من جدول books ━━━━━━━━━━
+        $stmt_book = $conn->prepare("SELECT price FROM books WHERE id = ?");
+        $stmt_book->bind_param("i", $book_id);
+        $stmt_book->execute();
+        $result_book = $stmt_book->get_result();
+        
+        if ($result_book->num_rows === 0) {
+            throw new Exception("الكتاب غير موجود!");
+        }
+        
+        $book_data = $result_book->fetch_assoc();
+        $book_price = $book_data['price'];
+        $stmt_book->close();
+
+        // ━━━━━━━━━━ تحديد المبلغ المطلوب بناءً على نوع العملية ━━━━━━━━━━
+        if ($action === 'borrow') {
+            // جلب سعر الإعارة من الإعدادات إذا لزم الأمر
+            $stmt_rental = $conn->prepare("SELECT value FROM settings WHERE name='purchase_price'");
+            $stmt_rental->execute();
+            $result_rental = $stmt_rental->get_result();
+            $row_rental = $result_rental->fetch_assoc();
+            $purchase_price = $row_rental['value'];
+            $stmt_rental->close();
+        } else {
+            // استخدام سعر الكتاب للشراء
+            $purchase_price = $book_price;
+        }
+
+        // جلب سعر الإعارة
+        $stmt_rental = $conn->prepare("SELECT value FROM settings WHERE name='rental_price'");
+        $stmt_rental->execute();
+        $result_rental = $stmt_rental->get_result();
+        $row_rental = $result_rental->fetch_assoc();
+        $rental_price = $row_rental['value'];
+        $stmt_rental->close();
+
+        // جلب غرامة التأخير
+        $stmt_late = $conn->prepare("SELECT value FROM settings WHERE name='late_fee'");
+        $stmt_late->execute();
+        $result_late = $stmt_late->get_result();
+        $row_late = $result_late->fetch_assoc();
+        $late_fee = $row_late['value'];
+        $stmt_late->close();
         
         // تحديد نوع العملية والمبلغ المطلوب
         $action = $_POST['action'];
-        $required_amount = ($action === 'borrow') ? 5000 : 25000;
+        $required_amount = ($action === 'borrow') ? $rental_price : $purchase_price;
         $book_id = (int)$_POST['book_id'];
 
         // ━━━━━━━━━━ التحقق من عدم وجود استعارة نشطة ━━━━━━━━━━
@@ -509,7 +550,7 @@ if (isset($_POST['action'])) {
 
         if ($check_borrow->get_result()->num_rows > 0) {
             $_SESSION['error'] = "لا يمكنك استعارة هذا الكتاب الآن. لديك استعارة نشطة!";
-            header("Location: index.php"); // أو الصفحة الحالية
+            header("Location:home.php"); // أو الصفحة الحالية
             exit();
         }}
         
@@ -541,7 +582,7 @@ if (isset($_POST['action'])) {
         $admin = $conn->query("SELECT id FROM users WHERE user_type = 'admin' LIMIT 1")->fetch_assoc();
         if ($admin) {
             $message = "طلب جديد: " . ($action === 'borrow' ? "استعارة" : "شراء") . " كتاب";
-            $link = BASE_URL . "admin/manage_loan.php";
+            $link = BASE_URL . "/admin/dashboard.php?section=ops";
         
             $stmt_notif = $conn->prepare("
                 INSERT INTO notifications 
@@ -551,8 +592,8 @@ if (isset($_POST['action'])) {
             $stmt_notif->bind_param("issi", $admin['id'], $message, $link, $request_id); // إضافة request_id
             $stmt_notif->execute();
         }
-        $_SESSION['success'] = "تم إرسال الطلب بنجاح!";
-        header("Location: index.php");
+        $_SESSION['success'] = "تم ارسال الطلب بنجاح , يمكنك متابعة الطلب في قسم الطلبات العالقة في لوحة التحكم الخاصة بك";
+        header("Location:home.php");
 
         DatabaseLogger::log(
             'loan_success',
@@ -565,6 +606,105 @@ if (isset($_POST['action'])) {
         header("Location: index.php");
     }
     exit();
+}
+
+// ======== معالجة تجديد الاستعارة ========
+if (isset($_POST['actions']) && $_POST['actions'] === 'renew') {
+    try {
+         // التحقق من CSRF Token
+         if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            throw new Exception('طلب غير مصرح به');
+        }
+        $actions = $_POST['actions'];
+        $request_id = (int)$_POST['request_id'];
+        $user_id = $_SESSION['user_id'];
+
+        // ━━━━━━━━━━ التحقق من صلاحية التجديد ━━━━━━━━━━
+        $stmt_check = $conn->prepare("
+            SELECT due_date, renewed 
+            FROM borrow_requests 
+            WHERE 
+                id = ? 
+                AND user_id = ? 
+                AND status = 'approved'
+                AND reading_completed = 0
+        ");
+        $stmt_check->bind_param("ii", $request_id, $user_id);
+        $stmt_check->execute();
+        $request_data = $stmt_check->get_result()->fetch_assoc();
+
+        if (!$request_data) {
+            throw new Exception("الطلب غير صالح للتجديد");
+        }
+
+        // التحقق من المدة المتبقية (يومين أو أقل)
+        $due_date = new DateTime($request_data['due_date']);
+        $today = new DateTime();
+        $interval = $today->diff($due_date);
+        $days_left = $interval->days;
+        $is_passed = $due_date < $today;
+
+        if ($days_left > 2 && !$is_passed) {
+            throw new Exception("يمكن التجديد قبل يومين من انتهاء المدة فقط");
+        }
+
+        // التحقق من عدد التجديدات (مثال: 3 مرات كحد أقصى)
+        if ($request_data['renewed'] >= 3) {
+            throw new Exception("وصلت إلى الحد الأقصى للتجديد");
+        }
+
+        // ━━━━━━━━━━ التحقق من الرصيد ━━━━━━━━━━
+        $renew_cost = 5000; // تكلفة التجديد
+        $stmt_balance = $conn->prepare("SELECT balance FROM wallets WHERE user_id = ?");
+        $stmt_balance->bind_param("i", $user_id);
+        $stmt_balance->execute();
+        $balance = $stmt_balance->get_result()->fetch_assoc()['balance'];
+
+        if ($balance < $renew_cost) {
+            $_SESSION['error'] = "رصيدك غير كافي لتجديد الاستعارة!";
+            header("Location: read_book.php?request_id=" . $request_id);
+            exit();
+        }
+
+        // ━━━━━━━━━━ إرسال إشعار للمدير ━━━━━━━━━━
+        $admin_id = 5; // أو جلب id المدير من قاعدة البيانات
+        $message = "طلب تجديد استعارة (الطلب #$request_id)";
+        $link = "admin/renew_requests.php?request_id=$request_id";
+
+        $stmt_notify = $conn->prepare("
+            INSERT INTO notifications 
+            (user_id, message, link, request_id) 
+            VALUES (?, ?, ?, ?)
+        ");
+        $stmt_notify->bind_param("issi", $admin_id, $message, $link, $request_id);
+        $stmt_notify->execute();
+
+        // ━━━━━━━━━━ تحديث حالة التجديد ━━━━━━━━━━
+        $new_renewed = $request_data['renewed'] + 1;
+                $stmt_renew = $conn->prepare("
+            UPDATE borrow_requests 
+            SET 
+                renewed = ?,
+                status = 'pending',
+                processed_at = NOW(),
+                due_date = NOW(),
+                request_date=NOW(),
+                loan_duration = 0,
+                type=?
+            WHERE id = ?
+        ");
+        $stmt_renew->bind_param("isi", $new_renewed, $actions,$request_id);
+        $stmt_renew->execute();
+
+        $_SESSION['success'] = "تم إرسال طلب التجديد لإدارة المكتبة!";
+        header("Location: read_book.php?request_id=" . $request_id);
+        exit();
+
+    } catch (Exception $e) {
+        $_SESSION['error'] = "خطأ: " . $e->getMessage();
+        header("Location: read_book.php?request_id=" . $request_id);
+        exit();
+    }
 }
 
 // ======== معالجة حذف الطلب ========

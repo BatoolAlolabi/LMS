@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -13,9 +15,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'user') {
 }
 
 // تعيين المبلغ الافتراضي
-$amount = isset($_POST['required_amount']) ? (float)$_POST['required_amount'] : 25000;
+
+//$amount = $_SESSION['funds'] ?? 23000;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    //$amount = isset($_POST['funds']) ? (float)$_POST['funds'] : 0;
+    $amount = isset($_SESSION['funds']) ? (float)$_SESSION['funds'] : 50000; 
+   
     try {
         // التحقق من CSRF token
         if (!verify_csrf_token($_POST['csrf_token'])) {
@@ -26,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $required_fields = ['card_number', 'expiry', 'cvv'];
         foreach ($required_fields as $field) {
             if (empty($_POST[$field])) {
-                throw new Exception("يرجى تعبئة جميع الحقول");
+                throw new Exception("يرجى تعبئة ..... جميع الحقول");
             }
         }
 
@@ -70,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     payment_type
                 ) VALUES (?, ?, 'completed', NOW(), ?,'topup')
             ");
-            $_SESSION['sucsess'] = "تم الدفع " ;
+            $_SESSION['success'] = "تم الدفع " ;
 
            
             if (!$stmt_payment) {
@@ -90,6 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "تم شحن " . number_format($amount, 2) . " ليرة بنجاح",
                 BASE_URL . 'user/dashboard.php'
             );
+                        // بعد جلب القيمة
+            unset($_SESSION['required_amount']);
+            unset($_SESSION['action']);
 
             set_success("تمت عملية الدفع بنجاح!");
             redirect(BASE_URL . 'user/dashboard.php');
@@ -103,99 +112,99 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_error($e->getMessage());
         redirect(BASE_URL . 'payment.php');
     }
+}else{
+    
+    $amount = isset($_SESSION['funds']) ? (float)$_SESSION['funds'] : 500004;  
 }
 
 // ━━━━━━━━━━ عرض واجهة الدفع ━━━━━━━━━━
 require __DIR__ . '/includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>إكمال عملية الدفع</title>
-    <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet>
-    <style>
-        .payment-card {
-            max-width: 500px;
-            margin: 50px auto;
-            border-radius: 15px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="card payment-card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0 text-center">
-                    <i class="fas fa-wallet"></i>
-                    إكمال عملية الدفع
-                </h4>
+<?php if (isset($_SESSION['error'])): ?>
+<script>
+Swal.fire({
+    icon: 'warning',
+    title: 'انتبه.. !',
+    text: '<?= $_SESSION['error'] ?>'
+});
+</script>
+<?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
+<style>
+.payment-card {
+    max-width: 500px;
+    margin: 50px auto;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+</style>
+
+<div class="container">
+    <div class="card payment-card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0 text-center">
+                <i class="fas fa-wallet"></i>
+                إكمال عملية الدفع
+            </h4>
+        </div>
+
+        <div class="card-body">
+            <div class="alert alert-info text-center">
+                <h5>المبلغ المطلوب: <?= number_format($amount) ?> ل.س</h5>
             </div>
-            
-            <div class="card-body">
-                <div class="alert alert-info text-center">
-                    <h5>المبلغ المطلوب: <?= number_format($amount, 2) ?> ل.س</h5>
+            <!-- اضافة الصورة هنا -->
+            <div class="text-center mb-4">
+                <img src="<?= BASE_URL ?>assets/lib/cards.png" alt="طرق الدفع المتاحة" class="img-fluid"
+                    style="max-width: 300px;">
+                <p class="text-muted mt-2">نقبل جميع البطاقات الائتمانية</p>
+            </div>
+
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= get_csrf_token() ?>">
+                <input type="hidden" name="required_amount" value="<?= $amount ?>">
+
+                <div class="mb-3">
+                    <label>رقم البطاقة</label>
+                    <input type="text" class="form-control" name="card_number" placeholder="1234 5678 9012 3456"
+                        required ">
+                    </div>
+
+                    <div class=" row mb-3">
+                    <div class="col-md-6">
+                        <label>تاريخ الانتهاء (MM/YY)</label>
+                        <input type="text" class="form-control" name="expiry" placeholder="01/25" required
+                            pattern="(0[1-9]|1[0-2])\/\d{2}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label>رمز CVV</label>
+                        <input type="text" class="form-control" name="cvv" placeholder="123" required pattern="\d{3}">
+                    </div>
                 </div>
 
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="<?= get_csrf_token() ?>">
-                    <input type="hidden" name="required_amount" value="<?= $amount ?>">
-
-                    <div class="mb-3">
-                        <label>رقم البطاقة</label>
-                        <input type="text" 
-                               class="form-control" 
-                               name="card_number" 
-                               placeholder="1234 5678 9012 3456" 
-                               required
-                               ">
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label>تاريخ الانتهاء (MM/YY)</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   name="expiry" 
-                                   placeholder="01/25" 
-                                   required
-                                   pattern="(0[1-9]|1[0-2])\/\d{2}">
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label>رمز CVV</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   name="cvv" 
-                                   placeholder="123" 
-                                   required
-                                   pattern="\d{3}">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="fas fa-check-circle"></i> تأكيد الدفع
-                    </button>
-                </form>
-            </div>
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="fas fa-check-circle"></i> تأكيد الدفع
+                </button>
+            </form>
         </div>
     </div>
+</div>
 
-    <script>
+<script>
 document.querySelector('form').addEventListener('submit', function(e) {
     const expiryInput = document.querySelector('input[name="expiry"]');
     const expiryValue = expiryInput.value.trim();
-    
+
     if (expiryValue) {
         const [month, year] = expiryValue.split('/');
         const fullYear = 2000 + parseInt(year, 10);
         const lastDay = new Date(fullYear, month, 0).getDate(); // آخر يوم في الشهر
-        
+
         const expiryDate = new Date(fullYear, month - 1, lastDay);
         const currentDate = new Date();
-        
+
         if (expiryDate < currentDate) {
             e.preventDefault();
             alert('بطاقة منتهية الصلاحية. يرجى استخدام بطاقة صالحة');

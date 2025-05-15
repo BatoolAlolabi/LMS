@@ -14,6 +14,7 @@ require __DIR__ . '/includes/header.php';
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    text-decoration:none;
 }
 
 /* الشريط الأخباري */
@@ -95,6 +96,7 @@ marquee {
 
 /* بطاقات المحتوى */
 .cards-container {
+    text-decoration:none;
     max-width: 1200px;
     margin: 0 auto 50px;
     padding: 0 15px;
@@ -104,11 +106,14 @@ marquee {
 }
 
 .card {
+    
     background: white;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s;
+   
+   
 }
 
 .card:hover {
@@ -124,11 +129,21 @@ marquee {
 
 .card-content {
     padding: 15px;
+    decoration:none;
+   
 }
 
 .card-content h3 {
-    color: #333;
+    color: #389;
     margin-bottom: 10px;
+    decoration:none;
+}
+.card-link {
+    text-decoration: none !important;
+}
+
+.card-link:hover {
+    text-decoration: none !important;
 }
 
 /* تجاوبية */

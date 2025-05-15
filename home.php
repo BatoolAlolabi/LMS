@@ -306,6 +306,17 @@ Swal.fire({
 <?php unset($_SESSION['error']); ?>
 <?php endif; ?>
 
+<?php if (isset($_SESSION['success'])): ?>
+<script>
+Swal.fire({
+    icon: 'success',
+    title: 'شكرا لك.. !',
+    text: '<?= $_SESSION['success'] ?>'
+});
+</script>
+<?php unset($_SESSION['success']); ?>
+<?php endif; ?>
+
 <div>
     <!-- شريط البحث والفلاتر -->
     <div class="search-filter-container">
